@@ -1,0 +1,68 @@
+ -- AERE 507X: Final course project
+ -- Saveri Pal
+ -- .smv file in nuXmv
+ -- This is the main module - highest level in the hierarchy
+ -- Three variables :-
+ --
+ --      high - denotes whether an incoming command is high priority or not
+ --             possible values: {yes, no}
+ --      low - denotes whather an incoming command is low priority or not
+ --             possible values: {yes, no}
+ --      resolve - denotes whether a command (high/low) has been executed or not
+ --                 boolean
+ -- 
+ -- All hight priority traffic commands (traffic light and stop sigh) are grouped to one.
+ -- All low priority command (lanechange, ditch,turn) are gouped to one.
+ -- A high priority command gets a priority in execution. 
+ -- If a high and low priority command is requested together, high will be executed
+ -- The resolve variable can resolve one variable at a time. If a command is requested while resolve
+ -- is TRUE, it will finish current execution and then execute the requested one. 
+ --
+  MODULE main
+  VAR
+  high : {yes, no};
+  low : {yes, no};
+  resolve : boolean;
+
+  ASSIGN
+ init( high) := no;
+ init(low) := no ;
+ init(resolve) := FALSE;
+
+  next(high) :=
+     case
+        (high = no & !resolve) : {no , yes};  -- High priority directives can be accepted when no current one is being executed
+         high = yes & low = yes : yes;        -- If both high and low priority directive is received at a time, the higher one is accepted
+   --      resolve : FALSE;                   -- The directive will be resolved when resolve is working on it
+          TRUE : no;
+      esac;
+
+    next(low) :=
+     case
+        (low = no & !resolve) : {no, yes};    -- Low priority directives can be accepted when no current directive is being executed
+         high = yes & low = yes : no;         -- If both high and low priority directive is received at a time, low is ignored
+   --      resolve : FALSE;                   -- The directive will be solved when resolve is working on it
+          TRUE : no;
+      esac;
+
+
+   next(resolve) :=  
+     case
+        (high=yes & low=no) : TRUE;     -- Whenever a directive is accepted, resolve turns true
+        (high=no & low=yes) : TRUE;
+         resolve : FALSE;               
+          TRUE : FALSE;
+      esac;
+
+  -- LTLSPEC G((high=yes -> X X  (resolve))
+  --safety check:  when a high priority command is received, it is resolved in atmost next two  steps
+  -- LTLSPEC  ((high=yes & low=yes) -> G X (low=no))
+  -- safety check: when both high and low priority command received,then always low is ignored in next step
+  LTLSPEC ((high=yes | low=yes) -> F resolve) 
+  
+  -- LTLSPEC   !(F (high=no & low=yes)) -- validity check: whether such a state can happen or not 
+  -- LTLSPEC   !(F (high=yes & low=no)) -- validity check: whether such a state can happen or not 
+  -- LTLSPEC   !(F (high=yes & low=yes)) -- validity check: whether such a state can happen or not 
+
+
+

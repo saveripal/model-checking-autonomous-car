@@ -1,0 +1,41 @@
+ -- AERE 507X: Final course project
+ -- Saveri Pal
+ -- .smv file in nuXmv
+ -- This is the low priority obstacle module.
+ -- Two variables :-
+ --
+ --     command - consists of the different types of low priority obstacles and none
+ --     state - denotes whether a command can be accepted or not
+ --             {ready} - command will be accepted
+ --             {busy}  - command cannot be accepted (; ignored)
+ --   
+ 
+ MODULE main
+ VAR
+ command : {ditch, lanechange, turn, none};
+ state : {ready, busy};
+ 
+ ASSIGN
+ init(state) := ready;
+ init(command) := {ditch, lanechange, turn, none};
+
+ next(state) :=
+     case
+        state=ready & command=none : ready;  -- State continues to be ready until a directive is received
+        state=busy & command=none : ready;   -- When state is busy executing a current directive, no further directive is accepted untill execution is complete
+        TRUE : busy;                         -- default
+     esac;
+ 
+ next(command) :=
+     case
+        state=ready : {ditch, lanechange, turn, none};  -- When state is ready it accepts directives
+        state=busy : {none};                            -- When state is busy, no directive is possible
+     esac;
+
+
+ -- LTLSPEC  (command=ditch -> F(state=busy))
+ -- Liveliness check: A command received is eventually executed
+ -- LTLSPEC ! F (command=ditch & command=turn)
+ -- Validity check: More than one command can never be received at a time.
+  LTLSPEC (state=busy -> F (state=ready))
+ -- If the state is busy now, it will be eventually (;when current execution complete) ready

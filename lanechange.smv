@@ -1,0 +1,103 @@
+-- AERE 505X: Final course project
+-- Saveri Pal
+-- .smv file in nuXmv
+-- This is the Lane change module. 
+-- It contains a two-lane highway going in the same direction.
+-- Three boolean variables :-
+--               
+--    lane - denotes whether RoboCar changes lane or not.
+--    car  - denotes whether a car is present in the lane
+--           RoboCar wishes to change to
+--    life - denotes whether RoboCar is Fine or Crashed.
+-- 
+-- RoboCar detects whether a car is present in the lane it wishes
+-- to change to. If yes, it does not change lane OR changes lane
+-- when car detected flag is clear - ideal case
+-- Else, it changes lane with a car present and 
+-- crashes - this is to be avoided. 
+ 
+ MODULE main
+ VAR
+-- declare variable set
+ lane : boolean;   -- Changes lane/not
+ car : boolean;    -- Is there a car in the lane I want to change to?
+ life : boolean;   -- Fine/crashed?
+
+ ASSIGN
+-- initial states
+ init (lane) := FALSE;  -- No lane change
+ init (car) := FALSE;   -- No car on other lane
+ init (life) := TRUE;   -- Fine
+
+ TRANS
+
+-- State 1 ->
+-- Does not change lane, full life points
+ (
+ (!lane & !car & life) ->
+-- State 1 
+ ((next(!lane)) & (next(!car)) & (next(life))) |
+-- State 2 
+ ((next(lane)) & (next(!car)) & (next(life))) |
+-- State 3 
+ ((next(!lane)) & (next(car)) & (next(life))) 
+ ) &
+
+-- State 2 ->
+-- Changes lane when no car present on other lane 
+-- No life lost; car is fine
+ (
+ (lane & !car & life) ->
+-- State 1
+ ((next(!lane)) & (next(!car)) & (next(life)))
+ ) &
+
+-- State 3 ->
+-- Car detected on other lane
+-- Does not change lane (back to State 1) OR
+-- changes lane to crash in the next state 5
+ (
+ (!lane & car & life) ->
+-- State 1
+ ((next(!lane)) & (next(!car)) & (next(life))) |
+--State 4
+ ((next(lane)) & (next(car)) & (next(life))) 
+ ) &
+
+-- State 4 ->
+-- Changes lane when car present on other lane
+ (
+ (lane & car & life) ->
+-- State 5
+ ((next(lane)) & (next(car)) & (next(!life)))
+ ) &
+
+-- State 5 ->
+-- Car crashes
+ (
+ (lane & car & !life) ->
+-- State 5
+ ((next(lane)) & (next(car)) & (next(!life)))
+ )
+
+ FAIRNESS 
+ TRUE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

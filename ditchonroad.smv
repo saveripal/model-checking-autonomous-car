@@ -1,0 +1,134 @@
+-- AERE 507X: Final course project
+-- Saveri Pal
+-- .smv file in nuXmv
+-- This module is the Ditch-on-road module.
+-- Four variables :-
+--
+--    pos      - denotes whether final destination is reached or not.
+--    lane     - denotes whether lane changed or not.
+--    obstacle - denotes whether an obstacle is detected on lane or not. 
+--    life     - denotes whether RoboCar is fine or Crashed.
+--
+-- It consists of a two-lane highway; each in opposing directions
+-- When an obstacle is detected, RoboCar can drive through it OR
+-- change lane to avoid it.
+-- If it changes lane, it should come back to the original lane
+-- to avoid crashing with vehicles opposing vehicles. Failing to
+-- do that will Crash Robocar.
+--   Soft obstacle - ditch on road.
+--   Hard obstacle - failing to change back to original lane.
+-- 
+-- Assumption: (1) car can change lane even if there isn't any ditch.
+--             (2) when ditch is detected, it can go in reverse to a position
+--                 where no ditch is detected.
+--             (3) it can go back and forth between initial and final position 
+--             
+
+ MODULE main
+ VAR
+-- Declare the set of system variables
+ pos : boolean;
+ lane : boolean;
+ obstacle : boolean;
+ life : 0..10;
+
+ ASSIGN
+-- Initial state
+ init (pos) := FALSE;
+ init (lane) := FALSE;
+ init (obstacle) := FALSE;
+ init (life) := 10;
+
+ TRANS
+-- State 1 ->
+-- Initial condition. Start condition.
+(
+(!pos & !lane & !obstacle & (life=10)) ->
+-- State 2 - encounters obstacle OR
+((next(!pos)) & (next(!lane)) & (next(obstacle)) & (next(life=10))) |
+-- state 3 - no obstacle, reaches target OR
+((next(pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=10))) |
+-- state 8 - changes lane without any obstacle being detected, JLT
+((next(!pos)) & (next(lane)) & (next(!obstacle)) & (next(life=10)))
+) &
+
+-- state 2 ->
+-- Obstacle detected
+(
+(!pos & !lane & obstacle & (life=10)) ->
+-- state 1
+((next(!pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=10))) | 
+-- state 4 - hits (or drives through)  obstacle
+((next(!pos)) & (next(!lane)) & (next(obstacle)) & (next(life=5))) | 
+-- state 7 - changes lane when obstacle detected
+ ((next(!pos)) & (next(lane)) & (next(obstacle)) & (next(life=10)))
+) &
+
+-- state 3 ->
+-- Final destination reached with full life points
+(
+(pos & !lane & !obstacle & (life=10)) ->
+--state 1
+((next(!pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=10)))
+) &
+
+-- state 4 ->
+-- Drives through obstacle: Soft 
+(
+(!pos & !lane & obstacle & (life=5)) ->
+-- state 5 
+((next(!pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=5)))
+) & 
+
+-- state 5 ->
+-- Life points deducted for not avoiding ditch,
+-- Moves towards final position, obstacle flag back to zero.
+(
+(!pos & !lane & !obstacle & (life=5)) ->
+-- state 6
+((next(pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=5)))
+) &
+
+-- state 6 ->
+-- Reaches final destination with life points deducted
+(
+(pos & !lane & !obstacle & (life=5)) ->
+-- state 5
+((next(!pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=5)))
+) &
+
+-- state 7 ->
+-- Lane changed after detecting obstacle
+(
+(!pos & lane & obstacle & (life=10)) ->
+-- state 2
+-- ((next(!pos)) & (next(!lane)) & (next(obstacle)) & (next(life=10))) |
+--state 8
+((next(!pos)) & (next(lane)) & (next(!obstacle)) & (next(life=10)))
+) &
+
+-- state 8 -> 
+-- Crosses ditch successfully after changing to the opposing lane
+(
+(!pos & lane & !obstacle & (life=10)) ->
+-- state 1 - Changes back to original lane
+((next(!pos)) & (next(!lane)) & (next(!obstacle)) & (next(life=10))) |
+-- state 9 - Fails to change back to oroginal lane
+((next(!pos)) & (next(lane)) & (next(!obstacle)) & (next(life=0)))
+) &
+
+-- state 9 ->
+-- Robocar crashes
+(
+(!pos & lane & !obstacle & (life=0)) ->
+-- state 9
+((next(!pos)) & (next(lane)) & (next(!obstacle)) & (next(life=0)))
+)
+
+FAIRNESS
+TRUE
+
+
+
+
+

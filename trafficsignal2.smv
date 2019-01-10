@@ -1,0 +1,38 @@
+ -- AERE 507X: Final course project
+ -- Saveri Pal
+ -- .smv in nuXmv
+ -- This is the Traffic light module.
+ -- Two variables :-
+ -- 
+ --    go - denotes whether RoboCar is moving or  not.
+ --    light - denotes the light encountered at the signal.
+ -- 
+ -- It consists of a simple traffic light with red, green and yellow light.
+ -- At a green light, the car keeps going.
+ -- At yellow, it might chosse to stop or go.
+ -- At red, it stops.
+ --
+
+ MODULE main
+ VAR
+ go : {yes, no};
+ light : {green, yellow, red};
+
+ ASSIGN
+ init(light) := {green, yellow, red};
+
+ next(go) :=
+     case
+        light = green : yes;
+        light = yellow : {yes, no};
+        light = red : no;
+     esac;
+
+  -- LTLSPEC  ((light=green) -> X (go=yes))
+  -- at green light, the car keeps moving
+  -- LTLSPEC  G ((light=red) ->  X (go=no))
+  -- safety spec: When red light detected, the car always stops at the next time instant
+ --  LTLSPEC  F ((light=red) &  (go=yes))
+ -- This never happens
+ LTLSPEC ((light = yellow) -> X(go=yes | go=no))
+ 

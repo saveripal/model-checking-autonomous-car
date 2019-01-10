@@ -1,0 +1,43 @@
+ -- AERE 507X: Final course project
+ -- Saveri Pal
+ -- .smv file in nuXmv
+ -- This is the high priority obstacle module.
+ -- Two variables :-
+ --
+ --     command - consists of the different types of high priority obstacles and none
+ --     state - denotes whether a command can be accepted or not
+ --             {ready} - command will be accepted
+ --             {busy}  - command cannot be accepted (; ignored)
+ -- Assumption: In this model, when the state is currently executing a directive no other directive
+ -- is be accepted. Therefore, it is assumed that execution time for a stop\traffic sign is small enough
+ -- to complete execution before another stop sign or traffic signal is encountered.  
+ 
+ MODULE main
+ VAR
+ command : {stop, traffic, none};
+ state : {ready, busy};
+ 
+ ASSIGN
+ init(state) := ready;
+ init(command) := {stop, traffic, none};
+
+ next(state) :=
+     case
+        state=ready & command=none : ready;  -- State continues to be ready until a directive is received
+        state=busy & command=none : ready;   -- When state is busy executing a current directive, no further directive is accepted untill execution is complete
+        TRUE : busy;                         -- default
+     esac;
+ 
+ next(command) :=
+     case
+        state=ready : {stop, traffic, none};  -- When state is ready it accepts directives
+        state=busy : {none};                  -- When state is busy, no directive is accepted
+     esac;
+
+
+ -- LTLSPEC  (command=stop -> F(state=busy))
+ -- Liveliness check: A command received is eventually executed
+ -- LTLSPEC ! F (command=stop & command=traffic)
+ -- Validity check: More than one command can never be received at a time.
+  LTLSPEC (state=busy -> F (state=ready))
+ -- If the state is busy now, it will be eventually (;when current execution complete) ready

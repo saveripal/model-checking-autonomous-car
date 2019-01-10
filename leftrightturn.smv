@@ -1,0 +1,143 @@
+-- AERE 507X: Final course project
+-- Saveri Pal
+-- .smv file in nuXmv
+-- This module is the Left/Right turn module.
+-- Five variables :-
+--
+--    lind  - denotes left indicator is ON/OFF
+--    rind  - denotes right indicator is ON/OFF
+--    lturn - denotes left turn taken/not
+--    rturn - denotes right turn is taken/not
+--    life  - denotes whether RoboCar is fine/crashed
+--
+-- It contains a single lane highway with left & right turns.
+-- Ideal case: Left/right turn taken after left/right
+--             indicator turned ON. 
+-- Following hard & soft mistakes assumed,
+--    Hard mistake - Right turn on left indicator
+--                   Left turn on right indicator
+--    Soft mistake - Right/left turn without an indicator              
+-- 
+-- For a hard mistake, RoboCar crashes.
+-- 
+-- Assumption: (1) car can turn indicator ON/OFF repeatedly without 
+--                 taking a turn afterwards.
+--             
+
+ MODULE main
+ VAR
+  -- declare set of variables
+ 
+ life  : boolean;
+ lind  : boolean;
+ rind  : boolean;
+ lturn : boolean;
+ rturn : boolean;
+ 
+ ASSIGN
+  -- Initial states
+ 
+ init (life)  := TRUE;
+ init (lind)  := FALSE;
+ init (rind)  := FALSE;
+ init (lturn) := FALSE;
+ init (rturn) := FALSE;
+
+ TRANS
+ -- State 1 ->
+ -- No turns or indicators 
+ (
+ (!lind & !rind & !lturn & !rturn & life) ->
+
+ -- State 3: Left turn without left indicator
+ ((next(!lind)) & (next(!rind)) & (next(lturn)) & (next(!rturn)) & (next(life))) |
+ -- State 4: Right turn without right indicator
+ ((next(!lind)) & (next(!rind)) & (next(!lturn)) & (next(rturn)) & (next(life))) |
+ -- State 5: Left ind Turned ON
+ ((next(lind)) & (next(!rind)) & (next(!lturn)) & (next(!rturn)) & (next(life))) |
+ -- State 8: Right ind Turned ON
+ ((next(!lind)) & (next(rind)) & (next(!lturn)) & (next(!rturn)) & (next(life)))
+ ) &
+
+  -- State 3 ->
+  -- Left turn without indicator 
+ (
+ (!lind & !rind & lturn & !rturn & life) ->
+ -- State 1: Goes back to initial state after turn
+ ((next(!lind)) & (next(!rind)) & (next(!lturn)) & (next(!rturn)) & (next(life))) 
+ ) &
+
+ -- State 4 ->
+ -- Right turn without indicator
+ (
+ (!lind & !rind & !lturn & rturn & life) ->
+ -- State 1 - goes back to Initial state after turn
+ ((next(!lind)) & (next(!rind)) & (next(!lturn)) & (next(!rturn)) & (next(life))) 
+ ) &
+
+ -- State 5 ->
+ -- Left indicator turned ON
+ (
+ (lind & !rind & !lturn & !rturn & life) ->
+ -- State 1: indicator turned off
+ ((next(!lind)) & (next(!rind)) & (next(!lturn)) & (next(!rturn)) & (next(life))) |
+ -- State 6: Right turn with Left indicator - Car crashes
+ ((next(lind)) & (next(!rind)) & (next(!lturn)) & (next(rturn)) & (next(!life))) |
+ -- State 7: Left turn with Left indicator -Robo Car fine
+ ((next(lind)) & (next(!rind)) & (next(lturn)) & (next(!rturn)) & (next(life)))
+ ) &
+
+ -- State 6 ->
+ -- Car crashes: right turn with left indicator
+ (
+ (lind & !rind & !lturn & rturn & (!life)) ->
+ -- State 6: Crashed!
+ ((next(lind)) & (next(!rind)) & (next(!lturn)) & (next(rturn)) & (next(!life)))
+ ) &
+
+ -- State 7 ->
+ -- Left turn with left indicator
+(
+ (lind & !rind & lturn & !rturn & life) ->
+ -- State 5: Left turn completed successfully 
+ ((next(lind)) & (next(!rind)) & (next(!lturn)) & (next(!rturn)) & (next(life)))
+ ) &
+
+ -- State 8 ->
+ -- Right indicator turned ON
+ (
+ (!lind & rind & !lturn & !rturn & life) ->
+ -- State 1: indicator turned OFF
+ ((next(!lind)) & (next(!rind)) & (next(!lturn)) & (next(!rturn)) & (next(life))) |
+ -- State 9: Left turn with Right indicator - Car crashes
+ ((next(!lind)) & (next(rind)) & (next(lturn)) & (next(!rturn)) & (next(!life))) |
+ -- State 10: Right turn with Right indicator
+ ((next(!lind)) & (next(rind)) & (next(!lturn)) & (next(rturn)) & (next(life)))
+ ) &
+
+ -- State 9 ->
+ -- Car crashes: Left turn with Right indicator
+ (
+ (!lind & rind & lturn & !rturn & (!life)) ->
+ -- State 9: Crashed!
+ ((next(!lind)) & (next(rind)) & (next(lturn)) & (next(!rturn)) & (next(!life)))
+ ) &
+
+ -- State 10 ->
+ -- Right turn with Right indicator
+ (
+ (!lind & rind & !lturn & rturn & (life)) ->
+ -- State 8 - Right turn Completed successfully
+ ((next(!lind)) & (next(rind)) & (next(!lturn)) & (next(!rturn)) & (next(life))) 
+ )
+
+ FAIRNESS
+ TRUE
+ 
+  
+--  LTLSPEC ! F(lind & rturn)
+ -- counterexample shows scenario of Right turn with left indicator
+
+  LTLSPEC !(F(lind &  lturn))
+ -- counterexample shows scenario of correct Left turn
+ 

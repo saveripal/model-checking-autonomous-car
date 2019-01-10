@@ -1,0 +1,83 @@
+-- AERE 507X: Final course project
+-- Saveri Pal
+-- .smv file in nuXmv
+-- This module is the Stop module.
+-- Five variables :-
+--
+--      go    - denotes whether RoboCar is moving or not.
+--      stop  - STOP sign detected or not.
+--      clear - checks if intersection is clear or not.
+--      life  - denotes whether RoboCar is fine or Crashed.
+--
+-- It consists a four-way stop. Also valid in case of a single STOP.
+-- Rule: car that reaches intersection first, passes first.
+-- Assumption: All cars correctly follws the above rule.
+-- When a STOP sign is detected, Robocar counts the number of cars that 
+-- reach an intersection before it.
+-- It  counts down till all of them pass the intersection
+-- and sends a CLEAR signal. Only then RoboCar starts crossing. 
+
+ MODULE main
+ VAR
+ go : boolean;     -- Car is moving/not
+  stop : boolean;   -- STOP sign detected/not
+ -- clear : boolean;  -- Intersection clear or not/ Is it my turn yet?
+ n_obs : 0..3;     -- No. of cars at intersection before me
+ life : boolean;   -- Fine/ crashed? 
+
+ ASSIGN
+ init(go) := TRUE;     -- Car is moving
+  init(stop) := FALSE;  -- No STOP sign detected
+ -- init(clear) := TRUE;  -- Intersection/way is clear
+ init(n_obs) := 0;     -- number of cars is zero
+ init(life) := TRUE;   -- RoboCar Fine
+
+
+ next(go) :=
+     case
+        stop : FALSE;          -- Car stops moving the next instant STOP detected 
+        --  n_obs > 0 : FALSE;
+        (!go & !stop ) : TRUE;  -- Car can start after stop once intersection is clear
+        go & !stop : TRUE;           -- In all other instances, car moves
+        TRUE : FALSE;
+     esac;
+ 
+   next(stop) :=
+    case
+     (go & !stop) : TRUE | FALSE;  -- When car is moving & path is clear, STOP sign may/not be detected
+      !go & n_obs = 0 : FALSE;         -- Once car has stopped at a STOP sign, the next instant stop is off
+      !life : TRUE;
+     TRUE: FALSE;                  -- In all other instances, stop is false
+     esac;
+
+ -- next(clear) :=
+  --   case
+  --     n_obs = 0 : TRUE;   -- Intersection is marked clear if there if it is RoboCar's first chance to start
+  --   TRUE      : FALSE;  -- When there are cars reaching before it, intersection is marked not clear
+  --   esac; 
+
+ next(n_obs) :=
+ case
+   n_obs = 0 : 0..3 ;      -- Max number of cars at an intersection is 3, excluding itself
+   TRUE      : n_obs - 1;  -- If number of cars is not equal to zero, RoboCar waits for its turn; counts down
+ esac;
+ 
+ next(life) :=
+   case
+     (stop & go) : FALSE;  -- If crossing occurs when intersection not marked CLEAR, RoboCar crashes
+      FALSE     : FALSE; 
+      TRUE      : TRUE;   -- Otherwise it is Fine.
+   esac;
+ 
+ FAIRNESS
+ TRUE
+ 
+--  LTLSPEC G (stop -> X ( !go) ); -- If there is a stop sign, the car will stop at the next instant
+ -- LTLSPEC G ( !stop -> (X (go)))  ;  -- starting from stop
+    LTLSPEC F (n_obs=1 -> X n_obs=0 & go)
+--  LTLSPEC G(n_obs =0 -> X !stop )  
+--  LTLSPEC G (n_obs = 3 -> X n_obs = 0) -- counts down sequentially
+      
+ 
+       
+ 
