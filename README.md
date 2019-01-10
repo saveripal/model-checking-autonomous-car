@@ -3,6 +3,6 @@
 
 ## Overview
 
-This is the git repo for a final project (in lieu of a final exam).
-Contains a pdf report of the project and all necessary nuXMV codes used in the project
+Contains a pdf report of the project and all necessary nuXMV codes used in the project.  
+The behavior of an autonomous car when faced with real life obstacles is tested using a compositional model checking approach. 
 
